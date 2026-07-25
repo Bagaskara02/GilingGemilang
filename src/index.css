@@ -33,6 +33,7 @@
 
   /* ── Typography ── */
   --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
 }
 
 @layer base {

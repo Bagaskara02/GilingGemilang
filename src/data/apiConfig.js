@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- *  KONFIGURASI API — Google Sheets LANGSUNG (Tanpa SheetDB)
+ *  KONFIGURASI API — Google Sheets untuk Expo Banner Proker
  * ═══════════════════════════════════════════════════════════════
  *
  *  CARA SETUP:
@@ -9,57 +9,37 @@
  *  2. Klik  File → Share → Publish to web → Klik "Publish".
  *  3. Copy Spreadsheet ID dari URL browser Anda:
  *     https://docs.google.com/spreadsheets/d/[INI_SPREADSHEET_ID]/edit
- *  4. Paste ID tersebut di variabel SPREADSHEET_ID di bawah.
+ *  4. Paste ID tersebut di variabel PROKER_SPREADSHEET_ID di bawah.
  *
- *  CATATAN PENTING:
- *  - Spreadsheet ID SAMA untuk semua 12 dusun.
- *  - Yang BEDA hanya nama sheet (tab) per dusun.
- *  - Gratis tanpa batas request! (tidak pakai SheetDB lagi)
+ *  FORMAT KOLOM SPREADSHEET:
+ *  | Nama | Deskripsi | Link Drive | Kategori | Tipe |
+ *
+ *  - Kategori: Utama / Pendukung / Individu
+ *  - Tipe: Foto / Video (opsional, default: Foto)
+ *  - Link Drive: URL Google Drive (format drive.google.com/file/d/...)
  *
  * ═══════════════════════════════════════════════════════════════
  */
 
 // ┌───────────────────────────────────────────────────────────┐
-// │  GANTI NILAI DI BAWAH DENGAN SPREADSHEET ID ANDA         │
-// │  Contoh: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms'  │
+// │  SPREADSHEET ID UNTUK DATA PROGRAM KERJA (PROKER)         │
 // └───────────────────────────────────────────────────────────┘
-const SPREADSHEET_ID = '1E7SBfDyWBZ6RXDo7rESduNuWayhB2NFKHGSoEN8qkSM';
-
-// ┌───────────────────────────────────────────────────────────┐
-// │  NAMA SHEET (TAB) DI SPREADSHEET UNTUK DUSUN INI         │
-// │  Sesuaikan dengan nama tab yang ada di spreadsheet Anda.  │
-// │  Untuk dusun lain, cukup ganti nama sheet-nya saja.       │
-// └───────────────────────────────────────────────────────────┘
-const SHEET_UMKM = 'UMKM Giling';
-const SHEET_STATS = 'Statistik Giling';
-const SHEET_FASILITAS = 'Fasilitas Giling';
+const PROKER_SPREADSHEET_ID = '1uzs690dAT2vsaLEsbjaK5Gk5nRTQ5Pt1FpcF_gTj8rU';
+const SHEET_PROKER = 'Proker064';
 
 /**
- * Membangun URL Google Sheets gviz/tq untuk mengambil data
- * langsung dari Google tanpa perantara SheetDB.
+ * Membangun URL Google Sheets gviz/tq untuk mengambil data.
  */
-function buildGoogleSheetsUrl(sheetName) {
-  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&_=${Date.now()}`;
+function buildGoogleSheetsUrl(spreadsheetId, sheetName) {
+  return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&_=${Date.now()}`;
 }
 
-// Cek apakah Spreadsheet ID sudah dikonfigurasi
-const isConfigured = SPREADSHEET_ID !== 'PASTE_SPREADSHEET_ID_DISINI';
+const isConfigured = PROKER_SPREADSHEET_ID !== 'PASTE_PROKER_SPREADSHEET_ID_DISINI';
 
 export const API_CONFIG = {
   /**
-   * URL untuk data UMKM (Tab: UMKM Giling).
-   * Otomatis null jika Spreadsheet ID belum di-set → pakai data statis.
+   * URL untuk data program kerja.
+   * Kolom: Nama | Deskripsi | Link Drive | Kategori | Tipe
    */
-  umkm: isConfigured ? buildGoogleSheetsUrl(SHEET_UMKM) : null,
-
-  /**
-   * URL untuk data statistik demografi (Tab: Statistik Giling).
-   * Otomatis null jika Spreadsheet ID belum di-set → pakai data statis.
-   */
-  stats: isConfigured ? buildGoogleSheetsUrl(SHEET_STATS) : null,
-
-  /**
-   * URL untuk data fasilitas (Tab: Fasilitas Giling).
-   */
-  fasilitas: isConfigured ? buildGoogleSheetsUrl(SHEET_FASILITAS) : null,
+  proker: isConfigured ? buildGoogleSheetsUrl(PROKER_SPREADSHEET_ID, SHEET_PROKER) : null,
 };
