@@ -336,7 +336,7 @@ function AutoPlayVideo({ proker }) {
 
     const observer = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
-      { threshold: 0.2, rootMargin: '200px' }
+      { threshold: 0.1, rootMargin: '1200px' }
     );
 
     observer.observe(container);
