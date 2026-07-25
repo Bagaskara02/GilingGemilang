@@ -878,7 +878,7 @@ export default function ExpoBanner() {
         const rows = parseGoogleSheetsResponse(text);
 
         const mapped = rows.map((row) => {
-          const rawMedia = row['Link Drive'] || row['link drive'] || row['Link drive'] || row['Foto'] || row['foto'] || null;
+          const rawMedia = row['Link'] || row['link'] || row['Link Drive'] || row['link drive'] || row['Foto'] || row['foto'] || null;
           const tipe = (row['Tipe'] || row['tipe'] || 'Foto').trim();
           const isVideo = tipe.toLowerCase() === 'video';
 

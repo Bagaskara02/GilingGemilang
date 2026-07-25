@@ -12,11 +12,11 @@
  *  4. Paste ID tersebut di variabel PROKER_SPREADSHEET_ID di bawah.
  *
  *  FORMAT KOLOM SPREADSHEET:
- *  | Nama | Deskripsi | Link Drive | Kategori | Tipe |
+ *  | Nama | Deskripsi | Link | Kategori | Tipe |
  *
  *  - Kategori: Utama / Pendukung / Individu
  *  - Tipe: Foto / Video (opsional, default: Foto)
- *  - Link Drive: URL Google Drive (format drive.google.com/file/d/...)
+ *  - Link: URL Google Drive (format drive.google.com/file/d/...) atau URL video/gambar langsung
  *
  * ═══════════════════════════════════════════════════════════════
  */
@@ -39,7 +39,7 @@ const isConfigured = PROKER_SPREADSHEET_ID !== 'PASTE_PROKER_SPREADSHEET_ID_DISI
 export const API_CONFIG = {
   /**
    * URL untuk data program kerja.
-   * Kolom: Nama | Deskripsi | Link Drive | Kategori | Tipe
+   * Kolom: Nama | Deskripsi | Link | Kategori | Tipe
    */
   proker: isConfigured ? buildGoogleSheetsUrl(PROKER_SPREADSHEET_ID, SHEET_PROKER) : null,
 };
