@@ -42,4 +42,4 @@ export const API_CONFIG = {
    * Kolom: Nama | Deskripsi | Link | Kategori | Tipe
    */
   proker: isConfigured ? buildGoogleSheetsUrl(PROKER_SPREADSHEET_ID, SHEET_PROKER) : null,
-};
+  };

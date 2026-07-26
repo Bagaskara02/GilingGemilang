@@ -1,12 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import {
-  motion,
-  useScroll,
-  useTransform,
-  useSpring,
-  useInView,
-  AnimatePresence,
-} from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { API_CONFIG } from '../data/apiConfig';
 
 /* ═══════════════════════════════════════════════════════════════
@@ -14,18 +7,11 @@ import { API_CONFIG } from '../data/apiConfig';
    ═══════════════════════════════════════════════════════════════ */
 
 function parseGoogleSheetsResponse(text) {
-  const match = text.match(
-    /google\.visualization\.Query\.setResponse\(({.*})\)/s
-  );
+  const match = text.match(/google\.visualization\.Query\.setResponse\(({.*})\)/s);
   if (!match) throw new Error('Format response Google Sheets tidak valid');
-
   const json = JSON.parse(match[1]);
   const table = json.table;
-
-  const hasAutoHeaders = table.cols.some(
-    (col) => col.label && col.label.trim() !== ''
-  );
-
+  const hasAutoHeaders = table.cols.some((col) => col.label && col.label.trim() !== '');
   let cols, dataRows;
   if (hasAutoHeaders) {
     cols = table.cols.map((col) => col.label || '');
@@ -34,7 +20,6 @@ function parseGoogleSheetsResponse(text) {
     cols = table.rows[0].c.map((cell) => (cell ? String(cell.v || '') : ''));
     dataRows = table.rows.slice(1);
   }
-
   return dataRows
     .filter((row) => row && row.c)
     .map((row) => {
@@ -42,10 +27,7 @@ function parseGoogleSheetsResponse(text) {
       cols.forEach((colName, i) => {
         if (!colName) return;
         const cell = row.c[i];
-        if (!cell || cell.v == null) {
-          obj[colName] = '';
-          return;
-        }
+        if (!cell || cell.v == null) { obj[colName] = ''; return; }
         obj[colName] = cell.f != null ? String(cell.f) : cell.v;
       });
       return obj;
@@ -53,22 +35,12 @@ function parseGoogleSheetsResponse(text) {
     .filter((row) => Object.values(row).some((v) => v !== ''));
 }
 
-/** Extract Google Drive file ID dari berbagai format URL */
 function extractDriveFileId(url) {
   if (!url || typeof url !== 'string') return null;
-
-  // Pattern: drive.google.com/file/d/{FILE_ID}/...
-  const driveMatch = url.match(
-    /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/
-  );
+  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (driveMatch) return driveMatch[1];
-
-  // Pattern: drive.google.com/open?id={FILE_ID}
-  const openMatch = url.match(
-    /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/
-  );
+  const openMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
   if (openMatch) return openMatch[1];
-
   return null;
 }
 
@@ -78,17 +50,10 @@ function toDirectImageUrl(url) {
   return url;
 }
 
-function toDriveVideoEmbedUrl(url) {
-  const fileId = extractDriveFileId(url);
-  if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`;
-  return url;
-}
-
-/** URL langsung untuk <video> tag (autoplay muted) */
-function toDriveVideoDirectUrl(url) {
-  const fileId = extractDriveFileId(url);
-  if (fileId) return `https://drive.google.com/uc?export=view&id=${fileId}`;
-  return url;
+function extractYouTubeId(url) {
+  if (!url || typeof url !== 'string') return null;
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -96,792 +61,186 @@ function toDriveVideoDirectUrl(url) {
    ═══════════════════════════════════════════════════════════════ */
 
 const FALLBACK_PROKER = [
-  {
-    nama: 'Pembuatan Website Expo KKN',
-    deskripsi: 'Membangun portal informasi digital untuk menampilkan seluruh program kerja KKN 064.',
-    media: null,
-    tipe: 'Foto',
-    kategori: 'Utama',
-  },
-  {
-    nama: 'Pendataan Kependudukan',
-    deskripsi: 'Melakukan pendataan komprehensif kependudukan di lokasi KKN.',
-    media: null,
-    tipe: 'Foto',
-    kategori: 'Utama',
-  },
-  {
-    nama: 'Sosialisasi Digitalisasi',
-    deskripsi: 'Workshop pemanfaatan teknologi digital untuk masyarakat.',
-    media: null,
-    tipe: 'Foto',
-    kategori: 'Utama',
-  },
-  {
-    nama: 'Sosialisasi Kesehatan',
-    deskripsi: 'Penyuluhan kesehatan masyarakat dan pola hidup bersih.',
-    media: null,
-    tipe: 'Foto',
-    kategori: 'Pendukung',
-  },
-  {
-    nama: 'Kerja Bakti Lingkungan',
-    deskripsi: 'Gotong royong bersama warga untuk menjaga kebersihan lingkungan.',
-    media: null,
-    tipe: 'Foto',
-    kategori: 'Pendukung',
-  },
-  {
-    nama: 'Bimbingan Belajar Anak',
-    deskripsi: 'Pendampingan belajar untuk anak-anak dengan metode yang menyenangkan.',
-    media: null,
-    tipe: 'Foto',
-    kategori: 'Individu',
-  },
-  {
-    nama: 'Dokumentasi Kegiatan',
-    deskripsi: 'Mendokumentasikan seluruh rangkaian kegiatan KKN sebagai arsip digital.',
-    media: null,
-    tipe: 'Foto',
-    kategori: 'Individu',
-  },
+  { nama: 'Sosialisasi Berbarcode', deskripsi: 'Memberikan sosialisasi KK berbarcode.', media: null, tipe: 'Foto', kategori: 'Utama' },
+  { nama: 'Pemasangan Peta', deskripsi: 'Pemasangan peta administrasi padukuhan.', media: null, tipe: 'Foto', kategori: 'Utama' },
+  { nama: 'Pendampingan TPA', deskripsi: 'Mendampingi belajar mengaji Iqro dan Al-Quran.', media: null, tipe: 'Foto', kategori: 'Pendukung' },
+  { nama: 'Pendampingan Posyandu', deskripsi: 'Membantu layanan kesehatan balita dan lansia.', media: null, tipe: 'Foto', kategori: 'Pendukung' },
+  { nama: 'Bimbingan Belajar', deskripsi: 'Membantu siswa mempelajari materi pelajaran.', media: null, tipe: 'Foto', kategori: 'Pendukung' },
+  { nama: 'Kumpulan Warga', deskripsi: 'Mengikuti kegiatan mempererat kerukunan.', media: null, tipe: 'Foto', kategori: 'Pendukung' },
+  { nama: 'Kerja Bakti', deskripsi: 'Gotong royong bersama warga.', media: null, tipe: 'Foto', kategori: 'Pendukung' },
+  { nama: 'Pendampingan MPLS', deskripsi: 'Mendampingi siswa baru MPLS.', media: null, tipe: 'Foto', kategori: 'Pendukung' },
+  { nama: 'Pembuatan Website Digitalisasi', deskripsi: 'Menyediakan website informasi.', media: null, tipe: 'Foto', kategori: 'Individu' },
+  { nama: 'Pembuatan POC', deskripsi: 'Membuat pupuk organik cair limbah rumah.', media: null, tipe: 'Foto', kategori: 'Individu' }
 ];
 
 /* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Floating Particles Background
+   KOMPONEN — Video Handlers
    ═══════════════════════════════════════════════════════════════ */
-
-function FloatingParticles() {
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 25 }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 4 + 2,
-        duration: Math.random() * 20 + 15,
-        delay: Math.random() * 10,
-        opacity: Math.random() * 0.12 + 0.04,
-      })),
-    []
-  );
-
-  return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-white"
-          style={{
-            width: p.size,
-            height: p.size,
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            opacity: p.opacity,
-          }}
-          animate={{
-            y: [0, -60, 0],
-            x: [0, Math.random() * 30 - 15, 0],
-            opacity: [p.opacity, p.opacity * 2, p.opacity],
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            delay: p.delay,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Hero Section dengan Parallax
-   ═══════════════════════════════════════════════════════════════ */
-
-function HeroSection() {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start start', 'end start'],
-  });
-
-  const titleY = useTransform(scrollYProgress, [0, 1], [0, -100]);
-  const subtitleY = useTransform(scrollYProgress, [0, 1], [0, -50]);
-  const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.6], [1, 0.88]);
-
-  const springTitle = useSpring(titleY, { stiffness: 60, damping: 20 });
-  const springOpacity = useSpring(opacity, { stiffness: 60, damping: 20 });
-  const springScale = useSpring(scale, { stiffness: 60, damping: 20 });
-  const springSubtitle = useSpring(subtitleY, { stiffness: 60, damping: 20 });
-
-  return (
-    <section
-      ref={ref}
-      className="relative min-h-[100svh] flex items-center justify-center overflow-hidden"
-    >
-      {/* Decorative blobs */}
-      <div className="absolute -top-24 -right-24 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-full bg-white/5 blur-2xl" />
-      <div className="absolute -bottom-32 -left-32 w-72 h-72 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] rounded-full bg-white/5 blur-3xl" />
-
-      <motion.div
-        className="relative z-10 text-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto w-full"
-        style={{ y: springTitle, opacity: springOpacity, scale: springScale }}
-      >
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-5 sm:mb-8"
-        >
-          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-300 animate-pulse" />
-          <span className="text-[#fdfbf7]/80 text-[10px] sm:text-xs md:text-sm tracking-widest uppercase font-medium">
-            Expo KKN 064 Giling
-          </span>
-        </motion.div>
-
-        {/* Main Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4 }}
-          className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-[#fdfbf7] leading-[1.1] tracking-tight mb-4 sm:mb-6"
-        >
-          Program{' '}
-          <span className="italic bg-gradient-to-r from-emerald-200 via-lime-200 to-teal-200 bg-clip-text text-transparent">
-            Kerja
-          </span>
-        </motion.h1>
-
-        {/* Subtitle */}
-        <motion.div style={{ y: springSubtitle }}>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.7 }}
-            className="text-[#fdfbf7]/70 text-sm sm:text-base md:text-lg lg:text-xl font-light max-w-xl sm:max-w-2xl mx-auto leading-relaxed px-2"
-          >
-            Padukuhan Giling · Desa Tuksono · Sentolo · Kulon Progo
-          </motion.p>
-        </motion.div>
-
-        {/* Scroll Indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="mt-10 sm:mt-16"
-        >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="flex flex-col items-center gap-2 sm:gap-3"
-          >
-            <span className="text-[#fdfbf7]/40 text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase">
-              Scroll untuk menjelajahi
-            </span>
-            <svg
-              className="w-5 h-5 sm:w-6 sm:h-6 text-[#fdfbf7]/40"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-            </svg>
-          </motion.div>
-        </motion.div>
-      </motion.div>
-    </section>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Auto-Play Video (muted, loop, play saat di-scroll)
-
-   Strategi:
-   - YouTube → embed player dengan autoplay=1 mute=1 loop=1 (paling reliable)
-   - Google Drive → iframe preview (autoplay tapi tidak bisa loop)
-   - URL langsung (.mp4 dll) → <video> tag dengan autoplay muted loop
-
-   pointer-events: none pada iframe memastikan user TIDAK BISA klik
-   unmute atau pause — video tetap MUTED selamanya.
-   ═══════════════════════════════════════════════════════════════ */
-
-function extractYouTubeId(url) {
-  if (!url || typeof url !== 'string') return null;
-  // youtube.com/watch?v=ID atau youtu.be/ID
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  );
-  return match ? match[1] : null;
-}
 
 function AutoPlayVideo({ proker }) {
   const containerRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
-
   const url = proker.media;
   const youtubeId = extractYouTubeId(url);
   const driveFileId = extractDriveFileId(url);
   const isDirectVideo = !youtubeId && !driveFileId;
 
-  // IntersectionObserver — tampilkan iframe hanya saat terlihat
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
-      { threshold: 0.1, rootMargin: '1200px' }
-    );
-
+    const observer = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), { threshold: 0.1, rootMargin: '1200px' });
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
 
-  // === YouTube (BEST: autoplay + muted + loop + no controls) ===
   if (youtubeId) {
     const ytUrl = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`;
     return (
-      <div ref={containerRef} className="aspect-square bg-black overflow-hidden relative">
-        {isVisible && (
-          <iframe
-            src={ytUrl}
-            title={proker.nama}
-            className="absolute inset-0 w-[300%] h-[300%] -top-[100%] -left-[100%] border-0 pointer-events-none"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-          />
-        )}
-
+      <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
+        {isVisible && <iframe src={ytUrl} title={proker.nama} className="absolute inset-0 w-[300%] h-[300%] -top-[100%] -left-[100%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
       </div>
     );
   }
 
-  // === Google Drive (autoplay via iframe, muted via pointer-events:none) ===
   if (driveFileId) {
     const driveUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
     const thumbnailUrl = `https://lh3.googleusercontent.com/d/${driveFileId}`;
-
     return (
-      <div ref={containerRef} className="aspect-square bg-black overflow-hidden relative">
-        {/* Thumbnail saat belum visible */}
-        {!isVisible && (
-          <img
-            src={thumbnailUrl}
-            alt={proker.nama}
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        )}
-
-        {/* iframe — pointer-events:none = user TIDAK BISA klik unmute */}
-        {isVisible && (
-          <iframe
-            src={driveUrl}
-            title={proker.nama}
-            className="absolute inset-0 w-[180%] h-[180%] -top-[40%] -left-[40%] border-0 pointer-events-none"
-            allow="autoplay; encrypted-media"
-          />
-        )}
-
-
+      <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
+        {!isVisible && <img src={thumbnailUrl} alt={proker.nama} className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
+        {isVisible && <iframe src={driveUrl} title={proker.nama} className="absolute inset-0 w-[180%] h-[180%] -top-[40%] -left-[40%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
       </div>
     );
   }
 
-  // === Direct video URL (.mp4, .webm, dll) ===
-  if (isDirectVideo) {
-    return <DirectVideo url={url} nama={proker.nama} containerRef={containerRef} />;
-  }
-
+  if (isDirectVideo) return <DirectVideo url={url} nama={proker.nama} containerRef={containerRef} />;
   return null;
 }
 
-/** Direct <video> untuk URL langsung (.mp4 dll) — autoplay muted loop */
 function DirectVideo({ url, nama, containerRef }) {
   const videoRef = useRef(null);
-
   useEffect(() => {
     const video = videoRef.current;
     const container = containerRef.current;
     if (!video || !container) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          video.play().catch(() => {});
-        } else {
-          video.pause();
-        }
-      },
-      { threshold: 0.3 }
-    );
-
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { video.play().catch(() => {}); } else { video.pause(); }
+    }, { threshold: 0.3 });
     observer.observe(container);
     return () => observer.disconnect();
   }, [containerRef]);
 
   return (
-    <div ref={containerRef} className="aspect-square bg-black overflow-hidden relative">
-      <video
-        ref={videoRef}
-        src={url}
-        className="w-full h-full object-cover"
-        muted
-        loop
-        playsInline
-        preload="metadata"
-      />
+    <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
+      <video ref={videoRef} src={url} className="w-full h-full object-cover" muted loop playsInline preload="metadata" />
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Media Renderer (Foto & Video)
-   ═══════════════════════════════════════════════════════════════ */
-
 function MediaRenderer({ proker }) {
   const isVideo = proker.tipe?.toLowerCase() === 'video';
-
-  if (isVideo && proker.media) {
-    return <AutoPlayVideo proker={proker} />;
-  }
-
+  if (isVideo && proker.media) return <AutoPlayVideo proker={proker} />;
   return (
-    <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden relative">
+    <div className="w-full h-full bg-[#789d55] overflow-hidden relative rounded-xl border border-white/20">
       {proker.media ? (
-        <img
-          src={proker.media}
-          alt={proker.nama}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={(e) => {
-            e.target.style.display = 'none';
-            if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
-          }}
-        />
+        <img src={proker.media} alt={proker.nama} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={(e) => { e.target.style.display = 'none'; if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex'; }} />
       ) : null}
-      {/* Fallback placeholder */}
-      <div
-        className={`absolute inset-0 ${proker.media ? 'hidden' : 'flex'} items-center justify-center bg-gradient-to-br from-[#7ba084]/20 to-[#b3d4b6]/30`}
-      >
-        <svg className="w-10 h-10 sm:w-14 sm:h-14 text-[#7ba084]/40" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+      <div className={`absolute inset-0 ${proker.media ? 'hidden' : 'flex'} items-center justify-center bg-gradient-to-br from-[#7ba084]/20 to-[#b3d4b6]/30`}>
+        <svg className="w-8 h-8 text-white/40" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+           <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
         </svg>
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Modal Video (handle YouTube, Drive, direct URL)
-   ═══════════════════════════════════════════════════════════════ */
-
 function ModalVideo({ url, nama }) {
   const youtubeId = extractYouTubeId(url);
   const driveFileId = extractDriveFileId(url);
-
-  // YouTube → embed player
-  if (youtubeId) {
-    return (
-      <iframe
-        src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`}
-        title={nama}
-        className="w-full h-full border-0"
-        allow="autoplay; encrypted-media; fullscreen"
-        allowFullScreen
-      />
-    );
-  }
-
-  // Google Drive → preview iframe
-  if (driveFileId) {
-    return (
-      <iframe
-        src={`https://drive.google.com/file/d/${driveFileId}/preview`}
-        title={nama}
-        className="w-full h-full border-0"
-        allow="autoplay; encrypted-media"
-        allowFullScreen
-      />
-    );
-  }
-
-  // Direct URL → <video> tag
-  return (
-    <video
-      src={url}
-      className="w-full h-full object-contain"
-      controls
-      autoPlay
-      playsInline
-    />
-  );
+  if (youtubeId) return <iframe src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`} title={nama} className="w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen" allowFullScreen />;
+  if (driveFileId) return <iframe src={`https://drive.google.com/file/d/${driveFileId}/preview`} title={nama} className="w-full h-full border-0" allow="autoplay; encrypted-media" allowFullScreen />;
+  return <video src={url} className="w-full h-full object-contain" controls autoPlay playsInline />;
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Detail Modal (untuk deskripsi lengkap)
-   ═══════════════════════════════════════════════════════════════ */
 
 function DetailModal({ proker, onClose }) {
   const isVideo = proker.tipe?.toLowerCase() === 'video';
-
-  // Close on escape
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
-
-  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+  const bgColor = proker.kategori?.toLowerCase() === 'utama' ? '#6a705c' : 
+                  proker.kategori?.toLowerCase() === 'pendukung' ? '#858c66' : 
+                  proker.kategori?.toLowerCase() === 'individu' ? '#9da18b' : '#87b060';
 
-      {/* Modal Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 30 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="relative bg-white rounded-2xl overflow-hidden max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/60 transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-          </svg>
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" onClick={onClose}>
+      <div className="absolute inset-0 bg-[#fdfbf7]/80 backdrop-blur-md" />
+      
+      <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="relative rounded-[2.5rem] border-8 border-white/40 max-w-3xl w-full shadow-2xl p-6 sm:p-10 pt-16 sm:pt-20 mt-8" style={{ backgroundColor: bgColor }} onClick={(e) => e.stopPropagation()}>
+        
+        {/* Title Pill overlapping the top edge */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-[#fdfbf7] px-6 sm:px-10 py-3 rounded-full font-bold tracking-widest text-sm sm:text-xl border-[6px] shadow-[0_4px_10px_rgba(0,0,0,0.1)] whitespace-nowrap text-center max-w-[90%] overflow-hidden text-ellipsis" style={{ color: bgColor, borderColor: bgColor }}>
+          DETAIL PROGRAM
+        </div>
+
+        {/* subtle texture inside modal */}
+        <div className="absolute inset-0 rounded-[2rem] opacity-[0.03] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiAvPgo8cGF0aCBkPSJNMCAwTDggOFpNOCAwTDAgOFoiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxIi8+Cjwvc3ZnPg==')] mix-blend-overlay pointer-events-none" />
+
+        <button onClick={onClose} className="absolute top-4 right-4 sm:top-6 sm:right-6 z-40 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-colors border-2 border-white/40 backdrop-blur-sm shadow-md">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
 
-        {/* Media */}
-        {proker.media && (
-          <div className="w-full aspect-video bg-gray-900">
-            {isVideo ? (
-              <ModalVideo url={proker.media} nama={proker.nama} />
-            ) : (
-              <img
-                src={proker.media}
-                alt={proker.nama}
-                className="w-full h-full object-contain bg-gray-100"
-                referrerPolicy="no-referrer"
-              />
-            )}
-          </div>
-        )}
-
-        {/* Text Content */}
-        <div className="p-5 sm:p-6">
-          <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 leading-snug mb-3">
-            {proker.nama}
-          </h3>
-          {proker.deskripsi && (
-            <p className="text-gray-600 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-              {proker.deskripsi}
-            </p>
+        <div className="relative z-10 flex flex-col gap-6">
+          {proker.media && (
+            <div className="w-full aspect-video bg-black/20 rounded-[1.5rem] overflow-hidden border-[4px] border-white/30 shadow-lg relative">
+              {isVideo ? <ModalVideo url={proker.media} nama={proker.nama} /> : <img src={proker.media} alt={proker.nama} className="w-full h-full object-contain" referrerPolicy="no-referrer" />}
+            </div>
           )}
-          <div className="mt-4 pt-3 border-t border-gray-100">
-            <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 font-medium uppercase tracking-wider">
-              {proker.kategori === 'Utama' && '🎯'}
-              {proker.kategori === 'Pendukung' && '🤝'}
-              {proker.kategori === 'Individu' && '🌱'}
-              Program Kerja {proker.kategori}
-            </span>
+          <div className="bg-white/10 rounded-[1.5rem] p-6 sm:p-8 backdrop-blur-sm border border-white/20 shadow-inner">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-4 drop-shadow-sm">{proker.nama}</h2>
+            <p className="text-white/95 text-sm sm:text-base leading-relaxed font-medium drop-shadow-sm whitespace-pre-line">{proker.deskripsi}</p>
           </div>
         </div>
+
       </motion.div>
     </motion.div>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Polaroid Card dengan Scroll Animation
-   ═══════════════════════════════════════════════════════════════ */
-
-function PolaroidCard({ proker, index, direction = 'left', onOpen }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { amount: 0.2, once: false });
-
-  const rotation = useMemo(() => {
-    const seed = (index * 7 + 3) % 13;
-    return (seed - 6) * 1.0;
-  }, [index]);
-
-  const hoverRotation = rotation > 0 ? rotation + 2 : rotation - 2;
-  const slideX = direction === 'left' ? -60 : 60;
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, x: slideX, y: 50, rotate: rotation + (direction === 'left' ? -8 : 8) }}
-      animate={
-        isInView
-          ? { opacity: 1, x: 0, y: 0, rotate: rotation }
-          : { opacity: 0, x: slideX, y: 50, rotate: rotation + (direction === 'left' ? -8 : 8) }
-      }
-      whileHover={{
-        rotate: hoverRotation,
-        scale: 1.04,
-        y: -6,
-        transition: { type: 'spring', stiffness: 300, damping: 20 },
-      }}
-      transition={{
-        duration: 0.6,
-        delay: index * 0.06,
-        ease: [0.25, 0.46, 0.45, 0.94],
-      }}
-      className="group cursor-pointer"
-      onClick={() => onOpen(proker)}
-    >
-      <div
-        className="bg-white rounded-sm overflow-hidden relative flex flex-col"
-        style={{
-          boxShadow:
-            '0 20px 40px -10px rgba(0,0,0,0.22), 0 8px 20px -6px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)',
-        }}
-      >
-        {/* Media area */}
-        <div className="p-1.5 sm:p-2 md:p-2.5 pb-0">
-          <MediaRenderer proker={proker} />
-        </div>
-
-        {/* Caption Area */}
-        <div className="px-2.5 sm:px-3 md:px-4 py-2.5 sm:py-3 md:py-4 flex-1">
-          <h3 className="font-serif text-xs sm:text-sm md:text-base font-semibold text-gray-800 leading-snug">
-            {proker.nama}
-          </h3>
-          {proker.deskripsi && (
-            <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 mt-1 sm:mt-1.5 leading-relaxed">
-              {proker.deskripsi}
-            </p>
-          )}
-        </div>
-
-        {/* Tape decoration */}
-        <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-3 sm:w-10 sm:h-4 md:w-12 md:h-5 bg-yellow-100/60 backdrop-blur-sm rotate-1 border border-yellow-200/30" />
-
-        {/* Hover overlay "Lihat Detail" */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100">
-          <span className="text-white text-[10px] sm:text-xs font-medium bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full">
-            Lihat Detail
-          </span>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Section Kategori Proker
-   ═══════════════════════════════════════════════════════════════ */
-
-function ProkerSection({ title, subtitle, icon, prokerList, sectionIndex, onOpenDetail }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { amount: 0.1, once: false });
-
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start end', 'end start'],
-  });
-
-  const backgroundY = useTransform(scrollYProgress, [0, 1], [30, -30]);
-  const springBgY = useSpring(backgroundY, { stiffness: 50, damping: 20 });
-
-  const themes = [
-    {
-      badge: 'bg-emerald-400/20 text-emerald-100 border-emerald-400/30',
-      accent: '#4ade80',
-      number: 'text-emerald-300/10',
-    },
-    {
-      badge: 'bg-teal-400/20 text-teal-100 border-teal-400/30',
-      accent: '#2dd4bf',
-      number: 'text-teal-300/10',
-    },
-    {
-      badge: 'bg-lime-400/20 text-lime-100 border-lime-400/30',
-      accent: '#a3e635',
-      number: 'text-lime-300/10',
-    },
-  ];
-
-  const theme = themes[sectionIndex % themes.length];
-
-  return (
-    <section ref={ref} className="relative min-h-[80svh] py-16 sm:py-20 md:py-28 lg:py-32 overflow-hidden">
-      {/* Big background number */}
-      <motion.div
-        className={`absolute -left-4 sm:-left-8 top-8 sm:top-12 font-serif text-[120px] sm:text-[180px] md:text-[250px] lg:text-[300px] font-black ${theme.number} select-none pointer-events-none leading-none`}
-        style={{ y: springBgY }}
-      >
-        {sectionIndex + 1}
-      </motion.div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-          transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="mb-10 sm:mb-14 md:mb-18 lg:mb-20"
-        >
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={isInView ? { scale: 1 } : { scale: 0 }}
-            transition={{ duration: 0.5, delay: 0.15, type: 'spring' }}
-            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border text-[10px] sm:text-xs tracking-widest uppercase font-medium mb-4 sm:mb-6 ${theme.badge}`}
-          >
-            {icon}
-            <span>{subtitle}</span>
-          </motion.span>
-
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-[#fdfbf7] leading-tight">
-            {title}
-          </h2>
-
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="mt-4 sm:mt-6 h-0.5 w-16 sm:w-20 md:w-24 origin-left"
-            style={{ backgroundColor: theme.accent }}
-          />
-        </motion.div>
-
-        {/* Polaroid Grid — Responsive */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6 lg:gap-8">
-          {prokerList.map((proker, i) => (
-            <PolaroidCard
-              key={`${proker.nama}-${i}`}
-              proker={proker}
-              index={i}
-              direction={i % 2 === 0 ? 'left' : 'right'}
-              onOpen={onOpenDetail}
-            />
-          ))}
-        </div>
-
-        {prokerList.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-            className="text-center py-16 sm:py-20"
-          >
-            <p className="text-[#fdfbf7]/40 text-base sm:text-lg font-serif italic">
-              Belum ada program kerja di kategori ini
-            </p>
-          </motion.div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   KOMPONEN — Footer Section
-   ═══════════════════════════════════════════════════════════════ */
-
-function ExpoFooter() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { amount: 0.4, once: false });
-
-  return (
-    <section ref={ref} className="relative min-h-[40svh] sm:min-h-[50vh] flex items-center justify-center overflow-hidden py-16">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-        transition={{ duration: 0.8 }}
-        className="text-center px-4 sm:px-6"
-      >
-        <p className="text-[#fdfbf7]/30 text-[10px] sm:text-xs tracking-[0.3em] sm:tracking-[0.4em] uppercase mb-3 sm:mb-4">
-          KKN 064 · UPN Veteran Yogyakarta
-        </p>
-        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[#fdfbf7]/80 mb-3 sm:mb-4">
-          Giling Gemilang
-        </h2>
-        <p className="text-[#fdfbf7]/40 text-xs sm:text-sm max-w-sm sm:max-w-md mx-auto leading-relaxed">
-          Padukuhan Giling, Desa Tuksono, Kecamatan Sentolo, Kabupaten Kulon Progo, D.I. Yogyakarta
-        </p>
-
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
-          transition={{ duration: 1, delay: 0.3 }}
-          className="mt-6 sm:mt-8 h-px w-24 sm:w-32 mx-auto bg-gradient-to-r from-transparent via-[#fdfbf7]/20 to-transparent"
-        />
-
-        <p className="text-[#fdfbf7]/20 text-[10px] sm:text-xs mt-4 sm:mt-6">
-          © 2025 KKN 064 Giling — Universitas Pembangunan Nasional Veteran Yogyakarta
-        </p>
-      </motion.div>
-    </section>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   HALAMAN UTAMA — Expo Banner
+   MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════ */
 
 export default function ExpoBanner() {
-  const [prokerData, setProkerData] = useState([]);
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedProker, setSelectedProker] = useState(null);
 
-  const handleOpenDetail = useCallback((proker) => {
-    setSelectedProker(proker);
-  }, []);
-
-  const handleCloseDetail = useCallback(() => {
-    setSelectedProker(null);
-  }, []);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
     async function fetchProker() {
       if (!API_CONFIG.proker) {
-        setProkerData(FALLBACK_PROKER);
+        setData(FALLBACK_PROKER);
         setLoading(false);
         return;
       }
-
       try {
         const res = await fetch(API_CONFIG.proker);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const text = await res.text();
         const rows = parseGoogleSheetsResponse(text);
-
         const mapped = rows.map((row) => {
           const rawMedia = row['Link'] || row['link'] || row['Link Drive'] || row['link drive'] || row['Foto'] || row['foto'] || null;
           const tipe = (row['Tipe'] || row['tipe'] || 'Foto').trim();
           const isVideo = tipe.toLowerCase() === 'video';
-
           return {
             nama: row['Nama'] || row['nama'] || '',
             deskripsi: row['Deskripsi'] || row['deskripsi'] || '',
@@ -890,115 +249,195 @@ export default function ExpoBanner() {
             kategori: row['Kategori'] || row['kategori'] || 'Lainnya',
           };
         });
-
-        setProkerData(mapped.length > 0 ? mapped : FALLBACK_PROKER);
+        setData(mapped.length > 0 ? mapped : FALLBACK_PROKER);
       } catch (err) {
-        console.error('⚠️ Gagal memuat data proker:', err);
+        console.error('⚠️ Error:', err);
         setError(err.message);
-        setProkerData(FALLBACK_PROKER);
+        setData(FALLBACK_PROKER);
       } finally {
         setLoading(false);
       }
     }
-
     fetchProker();
   }, []);
 
-  const prokerUtama = prokerData.filter((p) => p.kategori?.toLowerCase() === 'utama');
-  const prokerPendukung = prokerData.filter((p) => p.kategori?.toLowerCase() === 'pendukung');
-  const prokerIndividu = prokerData.filter((p) => p.kategori?.toLowerCase() === 'individu');
-
-  if (loading) {
-    return (
-      <div className="min-h-[100svh] flex items-center justify-center bg-gradient-to-br from-[#5a7d62] via-[#7ba084] to-[#8fb596]">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center px-4"
-        >
-          <div className="w-10 h-10 sm:w-14 sm:h-14 border-[3px] border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4 sm:mb-6" />
-          <p className="text-[#fdfbf7]/70 font-serif text-base sm:text-xl tracking-wide">
-            Memuat Program Kerja...
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
+  const groups = useMemo(() => {
+    const Utama = data.filter(p => p.kategori?.toLowerCase() === 'utama');
+    const Pendukung = data.filter(p => p.kategori?.toLowerCase() === 'pendukung');
+    const Individu = data.filter(p => p.kategori?.toLowerCase() === 'individu');
+    return { Utama, Pendukung, Individu };
+  }, [data]);
 
   return (
-    <div className="relative bg-gradient-to-br from-[#5a7d62] via-[#7ba084] to-[#8fb596] min-h-[100svh] overflow-x-hidden">
-      <FloatingParticles />
+    <div className="min-h-screen bg-[#fdfbf7] relative overflow-hidden font-['Poppins',sans-serif] text-gray-800 pb-32">
+      {/* Blurry Green Accents for the organic background feel */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-[#87b060]/30 blur-[100px]" />
+        <div className="absolute top-[40%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#87b060]/25 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[10%] w-[70vw] h-[70vw] rounded-full bg-[#87b060]/35 blur-[150px]" />
+      </div>
 
-      {/* Fixed gradient overlays */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.06)_0%,_transparent_60%)] pointer-events-none z-0" />
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(0,0,0,0.12)_0%,_transparent_60%)] pointer-events-none z-0" />
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
+        
+        {/* Header Section */}
+        <header className="flex flex-col items-center justify-center text-center mb-16 relative w-full min-h-[100svh]">
+          
+          <div className="flex items-center justify-center gap-6 mb-6">
+            <img src="/images/LogoUPNYogyakarta.png" alt="Logo UPN" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
+            <a href="https://www.instagram.com/giling.gemilang?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform duration-300">
+              <img src="/images/LOGOKKNGILINGTRANSPARAN.png" alt="Logo KKN" className="w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-md" />
+            </a>
+          </div>
 
-      {/* Noise texture */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 opacity-[0.025]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        }}
-      />
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-gray-600 leading-snug">
+            REKAPITULASI PROGRAM KERJA<br/>
+            <span className="text-gray-500 font-medium text-lg sm:text-2xl md:text-3xl">KKN UPN "VETERAN" YOGYAKARTA</span>
+          </h1>
 
-      {/* Content */}
-      <div className="relative z-10">
-        <HeroSection />
+          <div className="mt-8 bg-[#63725b] text-white px-8 py-2.5 rounded-full font-bold tracking-widest text-sm sm:text-lg shadow-md z-10 relative">
+            KELOMPOK AB.84.064
+          </div>
 
-        {/* API notice */}
-        {error && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-8 mb-6 sm:mb-8">
-            <div className="bg-yellow-400/10 backdrop-blur-sm border border-yellow-400/20 rounded-xl px-4 py-2.5 sm:px-5 sm:py-3 text-yellow-200/80 text-xs sm:text-sm text-center">
-              ⚠️ Menggunakan data contoh — Konfigurasi Spreadsheet ID di{' '}
-              <code className="bg-white/10 px-1 py-0.5 rounded text-[10px] sm:text-xs">apiConfig.js</code>
-            </div>
+          <p className="mt-4 text-[#676865] font-bold text-sm sm:text-lg max-w-lg tracking-wide">
+            Dukuh Giling, Kalurahan Tuksono,<br/>Kapanewon Sentolo, Kulon Progo
+          </p>
+
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1, duration: 1 }}
+            className="absolute bottom-24 sm:bottom-28 flex flex-col items-center justify-center text-[#63725b] font-bold tracking-widest text-xs sm:text-sm animate-bounce opacity-80"
+          >
+            <span className="mb-2 uppercase">Mulai Menjelajahi</span>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+          </motion.div>
+        </header>
+
+        {loading ? (
+          <div className="text-center py-20 animate-pulse text-[#63725b] font-bold text-xl">Memuat Program Kerja...</div>
+        ) : (
+          <div className="space-y-20 pb-20">
+            <CategorySection title="PROGRAM KERJA UTAMA" items={groups.Utama} onClick={setSelectedProker} bgColor="#6a705c" textColor="#fefae8" />
+            <CategorySection title="PROGRAM KERJA PENDUKUNG" items={groups.Pendukung} onClick={setSelectedProker} bgColor="#858c66" textColor="#fefae8" />
+            <CategorySection title="PROGRAM KERJA INDIVIDU" items={groups.Individu} onClick={setSelectedProker} bgColor="#9da18b" textColor="#fefae8" />
           </div>
         )}
+      </div>
 
-        <div className="max-w-[200px] sm:max-w-xs mx-auto h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-4 sm:mb-8" />
-
-        {prokerUtama.length > 0 && (
-          <ProkerSection
-            title="Program Kerja Utama"
-            subtitle="Proker Utama"
-            icon="🎯"
-            prokerList={prokerUtama}
-            sectionIndex={0}
-            onOpenDetail={handleOpenDetail}
-          />
-        )}
-
-        {prokerPendukung.length > 0 && (
-          <ProkerSection
-            title="Program Kerja Pendukung"
-            subtitle="Proker Pendukung"
-            icon="🤝"
-            prokerList={prokerPendukung}
-            sectionIndex={1}
-            onOpenDetail={handleOpenDetail}
-          />
-        )}
-
-        {prokerIndividu.length > 0 && (
-          <ProkerSection
-            title="Program Kerja Individu"
-            subtitle="Proker Individu"
-            icon="🌱"
-            prokerList={prokerIndividu}
-            sectionIndex={2}
-            onOpenDetail={handleOpenDetail}
-          />
-        )}
-
-        <ExpoFooter />
+      {/* Footer Element */}
+      <div className="fixed bottom-0 inset-x-0 pointer-events-none z-20 flex flex-col items-center overflow-hidden">
+         <a 
+           href="https://www.instagram.com/giling.gemilang?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           className="bg-white/95 backdrop-blur-sm text-[#63725b] px-6 py-2 rounded-full font-bold tracking-widest text-sm sm:text-base flex items-center gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] mb-4 pointer-events-auto border-2 border-[#87b060]/20 hover:scale-105 transition-transform duration-300"
+         >
+           <svg className="w-5 h-5 text-pink-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+           <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.17-3.8-5.46-.35-2.26.2-4.63 1.56-6.42 1.43-1.92 3.8-3.08 6.18-3.07.03 1.34-.01 2.68.02 4.02-1.28-.05-2.58.55-3.32 1.58-.69.96-.92 2.21-.6 3.37.31 1.15 1.14 2.13 2.22 2.57 1.18.5 2.56.44 3.69-.17 1.05-.57 1.83-1.62 2.05-2.8.1-2.92-.05-5.84.07-8.76z"/></svg>
+           @giling.gemilang
+         </a>
+         {/* Green grass wavy pattern block */}
+         <div className="w-full h-8 bg-[#87b060] rounded-t-[50%] shadow-[0_-5px_15px_rgba(135,176,96,0.3)]"></div>
       </div>
 
       {/* Detail Modal */}
       <AnimatePresence>
         {selectedProker && (
-          <DetailModal proker={selectedProker} onClose={handleCloseDetail} />
+          <DetailModal proker={selectedProker} onClose={() => setSelectedProker(null)} />
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function CategorySection({ title, items, onClick, bgColor, textColor }) {
+  if (!items || items.length === 0) return null;
+
+  const mid = Math.ceil(items.length / 2);
+  const col1 = items.slice(0, mid);
+  const col2 = items.slice(mid);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 80 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="relative pt-8"
+    >
+      {/* Container */}
+      <div 
+        className="rounded-[2.5rem] p-5 sm:p-10 pt-16 sm:pt-20 shadow-2xl relative z-10 border-8 border-white/40"
+        style={{ backgroundColor: bgColor }}
+      >
+        
+        {/* Section Title Pill - Removed overflow-hidden from parent so it isn't clipped */}
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-12 -translate-y-1/2 z-30 bg-[#fdfbf7] px-6 sm:px-10 py-3 rounded-full font-bold tracking-widest text-base sm:text-xl border-[6px] shadow-[0_4px_10px_rgba(0,0,0,0.1)] whitespace-nowrap"
+          style={{ color: bgColor, borderColor: bgColor }}
+        >
+          {title}
+        </div>
+
+        {/* subtle texture inside container for depth */}
+        <div className="absolute inset-0 rounded-[2rem] opacity-[0.03] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiAvPgo8cGF0aCBkPSJNMCAwTDggOFpNOCAwTDAgOFoiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxIi8+Cjwvc3ZnPg==')] mix-blend-overlay pointer-events-none" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 relative z-10">
+          <div className="flex flex-col gap-5 sm:gap-8">
+            {col1.map((item, i) => (
+              <ProkerCard key={i} item={item} index={i + 1} onClick={() => onClick(item)} textColor={textColor} />
+            ))}
+          </div>
+          {col2.length > 0 && (
+            <div className="flex flex-col gap-5 sm:gap-8">
+              {col2.map((item, i) => (
+                <ProkerCard key={i + mid} item={item} index={i + mid + 1} onClick={() => onClick(item)} textColor={textColor} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function ProkerCard({ item, index, onClick, textColor }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.5, delay: (index - 1) * 0.1, ease: "easeOut" }}
+      whileHover={{ scale: 1.03, y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      className="bg-transparent group cursor-pointer flex gap-4 sm:gap-6 hover:bg-white/10 p-3 sm:p-4 rounded-2xl transition-colors duration-300 relative z-20"
+      onClick={onClick}
+    >
+      {/* Thumbnail */}
+      <div className="w-28 h-28 sm:w-40 sm:h-40 md:w-36 md:h-36 lg:w-48 lg:h-48 flex-shrink-0 rounded-[1.25rem] overflow-hidden bg-black/10 shadow-lg border-[3px] border-white/30 relative group-hover:border-white transition-colors duration-300">
+         <MediaRenderer proker={item} />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="flex items-start gap-3 mb-2 sm:mb-3">
+          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center font-black text-xs sm:text-sm flex-shrink-0 shadow-sm mt-0.5" style={{ color: '#5e654c' }}>
+            {index}
+          </div>
+          <h3 
+            className="font-bold text-base sm:text-xl leading-tight group-hover:opacity-80 transition-opacity drop-shadow-sm"
+            style={{ color: textColor }}
+          >
+            {item.nama}
+          </h3>
+        </div>
+        <p 
+          className="text-xs sm:text-sm leading-relaxed text-justify drop-shadow-sm font-normal mt-1 sm:mt-2"
+          style={{ color: textColor, opacity: 0.95 }}
+        >
+          {item.deskripsi}
+        </p>
+      </div>
+    </motion.div>
   );
 }
