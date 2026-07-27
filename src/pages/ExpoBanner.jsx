@@ -97,7 +97,7 @@ function AutoPlayVideo({ proker }) {
     const ytUrl = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`;
     return (
       <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
-        {isVisible && <iframe src={ytUrl} title={proker.nama} loading="lazy" className="absolute inset-0 w-[300%] h-[300%] -top-[100%] -left-[100%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
+        {isVisible && <iframe src={ytUrl} title={proker.nama} className="absolute inset-0 w-[300%] h-[300%] -top-[100%] -left-[100%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
       </div>
     );
   }
@@ -108,7 +108,7 @@ function AutoPlayVideo({ proker }) {
     return (
       <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
         {!isVisible && <img src={thumbnailUrl} alt={proker.nama} className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
-        {isVisible && <iframe src={driveUrl} title={proker.nama} loading="lazy" className="absolute inset-0 w-[180%] h-[180%] -top-[40%] -left-[40%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
+        {isVisible && <iframe src={driveUrl} title={proker.nama} className="absolute inset-0 w-[180%] h-[180%] -top-[40%] -left-[40%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
       </div>
     );
   }
@@ -132,7 +132,7 @@ function DirectVideo({ url, nama, containerRef }) {
 
   return (
     <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
-      <video ref={videoRef} src={url} className="w-full h-full object-cover" muted loop playsInline preload="none" />
+      <video ref={videoRef} src={url} className="w-full h-full object-cover" muted loop playsInline preload="auto" />
     </div>
   );
 }
@@ -316,7 +316,7 @@ export default function ExpoBanner() {
         {loading ? (
           <div className="text-center py-20 animate-pulse text-[#63725b] font-bold text-xl">Memuat Program Kerja...</div>
         ) : (
-          <div className="space-y-20 pb-20">
+          <div className="space-y-20 pb-36">
             <CategorySection title="PROGRAM KERJA UTAMA" items={groups.Utama} onClick={setSelectedProker} bgColor="#6a705c" textColor="#fefae8" />
             <CategorySection title="PROGRAM KERJA PENDUKUNG" items={groups.Pendukung} onClick={setSelectedProker} bgColor="#858c66" textColor="#fefae8" />
             <CategorySection title="PROGRAM KERJA INDIVIDU" items={groups.Individu} onClick={setSelectedProker} bgColor="#9da18b" textColor="#fefae8" />
@@ -414,7 +414,7 @@ function ProkerCard({ item, index, onClick, textColor }) {
       onClick={onClick}
     >
       {/* Thumbnail */}
-      <div className="w-32 h-32 sm:w-44 sm:h-44 md:w-40 md:h-40 lg:w-48 lg:h-48 flex-shrink-0 rounded-[1.25rem] overflow-hidden bg-black/10 shadow-lg border-[3px] border-white/30 relative group-hover:border-white transition-colors duration-300 transform-gpu">
+      <div className="w-24 h-24 sm:w-36 sm:h-36 md:w-32 md:h-32 lg:w-40 lg:h-40 flex-shrink-0 rounded-[1.25rem] overflow-hidden bg-black/10 shadow-lg border-[3px] border-white/30 relative group-hover:border-white transition-colors duration-300 transform-gpu">
          <MediaRenderer proker={item} />
       </div>
 
