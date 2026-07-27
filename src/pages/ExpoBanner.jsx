@@ -97,7 +97,7 @@ function AutoPlayVideo({ proker }) {
     const ytUrl = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`;
     return (
       <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
-        {isVisible && <iframe src={ytUrl} title={proker.nama} className="absolute inset-0 w-[300%] h-[300%] -top-[100%] -left-[100%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
+        {isVisible && <iframe src={ytUrl} title={proker.nama} loading="lazy" className="absolute inset-0 w-[300%] h-[300%] -top-[100%] -left-[100%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
       </div>
     );
   }
@@ -108,7 +108,7 @@ function AutoPlayVideo({ proker }) {
     return (
       <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
         {!isVisible && <img src={thumbnailUrl} alt={proker.nama} className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
-        {isVisible && <iframe src={driveUrl} title={proker.nama} className="absolute inset-0 w-[180%] h-[180%] -top-[40%] -left-[40%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
+        {isVisible && <iframe src={driveUrl} title={proker.nama} loading="lazy" className="absolute inset-0 w-[180%] h-[180%] -top-[40%] -left-[40%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
       </div>
     );
   }
@@ -132,7 +132,7 @@ function DirectVideo({ url, nama, containerRef }) {
 
   return (
     <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
-      <video ref={videoRef} src={url} className="w-full h-full object-cover" muted loop playsInline preload="metadata" />
+      <video ref={videoRef} src={url} className="w-full h-full object-cover" muted loop playsInline preload="none" />
     </div>
   );
 }
@@ -157,9 +157,9 @@ function MediaRenderer({ proker }) {
 function ModalVideo({ url, nama }) {
   const youtubeId = extractYouTubeId(url);
   const driveFileId = extractDriveFileId(url);
-  if (youtubeId) return <iframe src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`} title={nama} className="w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen" allowFullScreen />;
-  if (driveFileId) return <iframe src={`https://drive.google.com/file/d/${driveFileId}/preview`} title={nama} className="w-full h-full border-0" allow="autoplay; encrypted-media" allowFullScreen />;
-  return <video src={url} className="w-full h-full object-contain" controls autoPlay playsInline />;
+  if (youtubeId) return <iframe src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`} title={nama} loading="lazy" className="w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen" allowFullScreen />;
+  if (driveFileId) return <iframe src={`https://drive.google.com/file/d/${driveFileId}/preview`} title={nama} loading="lazy" className="w-full h-full border-0" allow="autoplay; encrypted-media" allowFullScreen />;
+  return <video src={url} className="w-full h-full object-contain" controls autoPlay muted playsInline preload="metadata" />;
 }
 
 function DetailModal({ proker, onClose }) {
@@ -410,11 +410,11 @@ function ProkerCard({ item, index, onClick, textColor }) {
       transition={{ duration: 0.5, delay: (index - 1) * 0.1, ease: "easeOut" }}
       whileHover={{ scale: 1.03, y: -4 }}
       whileTap={{ scale: 0.98 }}
-      className="bg-transparent group cursor-pointer flex gap-4 sm:gap-6 hover:bg-white/10 p-3 sm:p-4 rounded-2xl transition-colors duration-300 relative z-20"
+      className="bg-transparent group cursor-pointer flex gap-4 sm:gap-6 hover:bg-white/10 p-3 sm:p-4 rounded-2xl transition-colors duration-300 relative z-20 will-change-transform"
       onClick={onClick}
     >
       {/* Thumbnail */}
-      <div className="w-28 h-28 sm:w-40 sm:h-40 md:w-36 md:h-36 lg:w-48 lg:h-48 flex-shrink-0 rounded-[1.25rem] overflow-hidden bg-black/10 shadow-lg border-[3px] border-white/30 relative group-hover:border-white transition-colors duration-300">
+      <div className="w-32 h-32 sm:w-44 sm:h-44 md:w-40 md:h-40 lg:w-48 lg:h-48 flex-shrink-0 rounded-[1.25rem] overflow-hidden bg-black/10 shadow-lg border-[3px] border-white/30 relative group-hover:border-white transition-colors duration-300 transform-gpu">
          <MediaRenderer proker={item} />
       </div>
 
