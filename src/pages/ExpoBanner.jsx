@@ -207,6 +207,14 @@ function DetailModal({ proker, onClose }) {
           <div className="bg-white/10 rounded-[1.5rem] p-6 sm:p-8 backdrop-blur-sm border border-white/20 shadow-inner">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-4 drop-shadow-sm">{proker.nama}</h2>
             <p className="text-white/95 text-sm sm:text-base leading-relaxed font-medium drop-shadow-sm whitespace-pre-line">{proker.deskripsi}</p>
+            {proker.nama?.toLowerCase().includes('website digitalisasi informasi publik') && (
+              <div className="mt-6 flex justify-center sm:justify-start">
+                <a href="https://giling.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-[#87b060] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform border-2 border-white/40" onClick={(e) => e.stopPropagation()}>
+                  Kunjungi Website
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
@@ -412,7 +420,7 @@ function ProkerCard({ item, index, onClick, textColor }) {
       transition={{ duration: 0.5, delay: (index - 1) * 0.1, ease: "easeOut" }}
       whileHover={{ scale: 1.03, y: -4 }}
       whileTap={{ scale: 0.98 }}
-      className="bg-transparent group cursor-pointer flex gap-4 sm:gap-6 hover:bg-white/10 p-3 sm:p-4 rounded-2xl transition-colors duration-300 relative z-20 will-change-transform"
+      className="bg-transparent group cursor-pointer flex gap-3 sm:gap-6 hover:bg-white/10 p-2 sm:p-4 rounded-2xl transition-colors duration-300 relative z-20 will-change-transform"
       onClick={onClick}
     >
       {/* Thumbnail (Polaroid Style) */}
@@ -432,18 +440,32 @@ function ProkerCard({ item, index, onClick, textColor }) {
             {index}
           </div>
           <h3 
-            className="font-bold text-base sm:text-xl leading-tight group-hover:opacity-80 transition-opacity drop-shadow-sm"
+            className="font-bold text-[14px] sm:text-xl leading-tight group-hover:opacity-80 transition-opacity drop-shadow-sm"
             style={{ color: textColor }}
           >
             {item.nama}
           </h3>
         </div>
         <p 
-          className="text-xs sm:text-sm leading-relaxed text-justify drop-shadow-sm font-normal mt-1 sm:mt-2"
+          className="text-[11px] sm:text-sm leading-[1.4] sm:leading-relaxed text-justify drop-shadow-sm font-normal mt-1 sm:mt-2 break-words [hyphens:auto] [-webkit-hyphens:auto]"
           style={{ color: textColor, opacity: 0.95 }}
         >
           {item.deskripsi}
         </p>
+        {item.nama?.toLowerCase().includes('website digitalisasi informasi publik') && (
+          <div className="mt-3">
+             <a 
+               href="https://giling.vercel.app/" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="inline-flex items-center gap-1.5 bg-[#87b060] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold shadow-md hover:scale-105 transition-transform border border-white/40"
+               onClick={(e) => e.stopPropagation()}
+             >
+               Kunjungi Web
+               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+             </a>
+          </div>
+        )}
       </div>
     </motion.div>
   );
