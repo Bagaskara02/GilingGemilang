@@ -88,16 +88,18 @@ function AutoPlayVideo({ proker }) {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const observer = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), { threshold: 0.1, rootMargin: '1200px' });
+    const observer = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), { threshold: 0.1, rootMargin: '200px' });
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
 
   if (youtubeId) {
     const ytUrl = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`;
+    const thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
     return (
-      <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
-        {isVisible && <iframe src={ytUrl} title={proker.nama} className="absolute inset-0 w-[300%] h-[300%] -top-[100%] -left-[100%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
+      <div ref={containerRef} className="w-full h-full bg-[#eee] overflow-hidden relative">
+        <img src={thumbnailUrl} alt={proker.nama} className="absolute inset-0 w-full h-full object-cover" />
+        {isVisible && <iframe src={ytUrl} title={proker.nama} className="absolute inset-0 w-[300%] h-[300%] -top-[100%] -left-[100%] border-0 pointer-events-none opacity-0 transition-opacity duration-1000" onLoad={(e) => e.target.style.opacity = '1'} allow="autoplay; encrypted-media" />}
       </div>
     );
   }
@@ -106,9 +108,9 @@ function AutoPlayVideo({ proker }) {
     const driveUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
     const thumbnailUrl = `https://lh3.googleusercontent.com/d/${driveFileId}`;
     return (
-      <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
-        {!isVisible && <img src={thumbnailUrl} alt={proker.nama} className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
-        {isVisible && <iframe src={driveUrl} title={proker.nama} className="absolute inset-0 w-[180%] h-[180%] -top-[40%] -left-[40%] border-0 pointer-events-none" allow="autoplay; encrypted-media" />}
+      <div ref={containerRef} className="w-full h-full bg-[#eee] overflow-hidden relative">
+        <img src={thumbnailUrl} alt={proker.nama} className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" />
+        {isVisible && <iframe src={driveUrl} title={proker.nama} className="absolute inset-0 w-[180%] h-[180%] -top-[40%] -left-[40%] border-0 pointer-events-none opacity-0 transition-opacity duration-1000" onLoad={(e) => e.target.style.opacity = '1'} allow="autoplay; encrypted-media" />}
       </div>
     );
   }
@@ -131,7 +133,7 @@ function DirectVideo({ url, nama, containerRef }) {
   }, [containerRef]);
 
   return (
-    <div ref={containerRef} className="w-full h-full bg-black overflow-hidden relative rounded-xl">
+    <div ref={containerRef} className="w-full h-full bg-[#eee] overflow-hidden relative">
       <video ref={videoRef} src={url} className="w-full h-full object-cover" muted loop playsInline preload="auto" />
     </div>
   );
@@ -141,7 +143,7 @@ function MediaRenderer({ proker }) {
   const isVideo = proker.tipe?.toLowerCase() === 'video';
   if (isVideo && proker.media) return <AutoPlayVideo proker={proker} />;
   return (
-    <div className="w-full h-full bg-[#789d55] overflow-hidden relative rounded-xl border border-white/20">
+    <div className="w-full h-full bg-[#eee] overflow-hidden relative">
       {proker.media ? (
         <img src={proker.media} alt={proker.nama} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={(e) => { e.target.style.display = 'none'; if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex'; }} />
       ) : null}
@@ -413,9 +415,14 @@ function ProkerCard({ item, index, onClick, textColor }) {
       className="bg-transparent group cursor-pointer flex gap-4 sm:gap-6 hover:bg-white/10 p-3 sm:p-4 rounded-2xl transition-colors duration-300 relative z-20 will-change-transform"
       onClick={onClick}
     >
-      {/* Thumbnail */}
-      <div className="w-24 h-24 sm:w-36 sm:h-36 md:w-32 md:h-32 lg:w-40 lg:h-40 flex-shrink-0 rounded-[1.25rem] overflow-hidden bg-black/10 shadow-lg border-[3px] border-white/30 relative group-hover:border-white transition-colors duration-300 transform-gpu">
-         <MediaRenderer proker={item} />
+      {/* Thumbnail (Polaroid Style) */}
+      <div 
+        className="w-24 h-24 sm:w-36 sm:h-36 md:w-32 md:h-32 lg:w-40 lg:h-40 flex-shrink-0 bg-[#fdfbf7] p-2 sm:p-2.5 shadow-md relative group-hover:shadow-xl transition-all duration-300 transform-gpu"
+        style={{ transform: `rotate(${index % 2 === 0 ? '3deg' : '-3deg'})` }}
+      >
+         <div className="w-full h-full relative overflow-hidden bg-black/5">
+           <MediaRenderer proker={item} />
+         </div>
       </div>
 
       {/* Content */}
@@ -432,7 +439,7 @@ function ProkerCard({ item, index, onClick, textColor }) {
           </h3>
         </div>
         <p 
-          className="text-xs sm:text-sm leading-relaxed text-justify drop-shadow-sm font-normal mt-1 sm:mt-2"
+          className="text-xs sm:text-sm leading-relaxed text-left drop-shadow-sm font-normal mt-1 sm:mt-2"
           style={{ color: textColor, opacity: 0.95 }}
         >
           {item.deskripsi}
