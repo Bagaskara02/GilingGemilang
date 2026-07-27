@@ -417,7 +417,7 @@ function ProkerCard({ item, index, onClick, textColor }) {
     >
       {/* Thumbnail (Polaroid Style) */}
       <div 
-        className="w-24 h-24 sm:w-36 sm:h-36 md:w-32 md:h-32 lg:w-40 lg:h-40 flex-shrink-0 bg-[#fdfbf7] p-2 sm:p-2.5 shadow-md relative group-hover:shadow-xl transition-all duration-300 transform-gpu"
+        className="w-32 h-32 sm:w-44 sm:h-44 md:w-36 md:h-36 lg:w-48 lg:h-48 flex-shrink-0 bg-[#fdfbf7] p-2 sm:p-2.5 shadow-md relative group-hover:shadow-xl transition-all duration-300 transform-gpu"
         style={{ transform: `rotate(${index % 2 === 0 ? '3deg' : '-3deg'})` }}
       >
          <div className="w-full h-full relative overflow-hidden bg-black/5">
@@ -439,7 +439,7 @@ function ProkerCard({ item, index, onClick, textColor }) {
           </h3>
         </div>
         <p 
-          className="text-xs sm:text-sm leading-relaxed text-left drop-shadow-sm font-normal mt-1 sm:mt-2"
+          className="text-xs sm:text-sm leading-relaxed text-justify drop-shadow-sm font-normal mt-1 sm:mt-2"
           style={{ color: textColor, opacity: 0.95 }}
         >
           {item.deskripsi}
